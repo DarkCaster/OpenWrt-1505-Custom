@@ -79,6 +79,7 @@ endef
 
 define Profile/WNR2200/Description
 	Package set optimized for the NETGEAR WNR2200
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev vsftpd luci luci-i18n-base-ru luci-app-commands luci-i18n-commands-ru luci-app-firewall luci-i18n-firewall-ru luci-app-openvpn luci-i18n-openvpn-ru luci-app-privoxy luci-app-qos luci-i18n-qos-ru luci-app-udpxy luci-app-upnp luci-i18n-upnp-ru luci-theme-openwrt 6in4 zram-swap stunnel igmpproxy xl2tpd openvpn-openssl openvpn-easy-rsa tinc mc rsync
 endef
 
 $(eval $(call Profile,WNR2200))
