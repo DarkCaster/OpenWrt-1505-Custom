@@ -1,0 +1,18 @@
+2015-02-12  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
+
+	* sysdeps/unix/sysv/linux/powerpc/htm.h [TABORT]: Fix encoding for
+	little endian.
+
+Index: glibc-2.21/sysdeps/unix/sysv/linux/powerpc/htm.h
+===================================================================
+--- glibc-2.21.orig/sysdeps/unix/sysv/linux/powerpc/htm.h
++++ glibc-2.21/sysdeps/unix/sysv/linux/powerpc/htm.h
+@@ -60,7 +60,7 @@
+ #define TBEGIN ".long 0x7c00051d"
+ #define TEND   ".long 0x7c00055d"
+ #if __BYTE_ORDER == __LITTLE_ENDIAN
+-# define TABORT ".byte 0x1d,0x07,%1,0x1d"
++# define TABORT ".byte 0x1d,0x07,%1,0x7c"
+ #else
+ # define TABORT ".byte 0x7c,%1,0x07,0x1d"
+ #endif

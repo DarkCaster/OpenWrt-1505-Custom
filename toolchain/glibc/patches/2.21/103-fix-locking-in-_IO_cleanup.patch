@@ -1,0 +1,236 @@
+Always do locking when accessing streams
+
+	[BZ #15142]
+	* libio/genops.c (_IO_list_all_stamp): Delete.  All uses removed.
+	(_IO_flush_all_all_lockp): Delete.
+	(_IO_flush_all): Replace with body of _IO_flush_all_all_lockp.
+	Always do locking.
+	(_IO_unbuffer_write): Always do locking.
+	(_IO_cleanup): Call _IO_flush_all instead of _IO_flush_all_lockp.
+	* libio/libioP.h (_IO_flush_all_all_lockp): Remove declaration.
+
+diff --git a/libio/genops.c b/libio/genops.c
+index e0ce8cc..9def1d4 100644
+--- a/libio/genops.c
++++ b/libio/genops.c
+@@ -38,10 +38,6 @@
+ static _IO_lock_t list_all_lock = _IO_lock_initializer;
+ #endif
+ 
+-/* Used to signal modifications to the list of FILE decriptors.  */
+-static int _IO_list_all_stamp;
+-
+-
+ static _IO_FILE *run_fp;
+ 
+ #ifdef _IO_MTSAFE_IO
+@@ -70,16 +66,12 @@ _IO_un_link (fp)
+       if (_IO_list_all == NULL)
+ 	;
+       else if (fp == _IO_list_all)
+-	{
+-	  _IO_list_all = (struct _IO_FILE_plus *) _IO_list_all->file._chain;
+-	  ++_IO_list_all_stamp;
+-	}
++	_IO_list_all = (struct _IO_FILE_plus *) _IO_list_all->file._chain;
+       else
+ 	for (f = &_IO_list_all->file._chain; *f; f = &(*f)->_chain)
+ 	  if (*f == (_IO_FILE *) fp)
+ 	    {
+ 	      *f = fp->file._chain;
+-	      ++_IO_list_all_stamp;
+ 	      break;
+ 	    }
+       fp->file._flags &= ~_IO_LINKED;
+@@ -108,7 +100,6 @@ _IO_link_in (fp)
+ #endif
+       fp->file._chain = (_IO_FILE *) _IO_list_all;
+       _IO_list_all = fp;
+-      ++_IO_list_all_stamp;
+ #ifdef _IO_MTSAFE_IO
+       _IO_funlockfile ((_IO_FILE *) fp);
+       run_fp = NULL;
+@@ -818,25 +809,20 @@ _IO_get_column (fp)
+ 
+ 
+ int
+-_IO_flush_all_lockp (int do_lock)
++_IO_flush_all (void)
+ {
+   int result = 0;
+   struct _IO_FILE *fp;
+-  int last_stamp;
+ 
+ #ifdef _IO_MTSAFE_IO
+-  __libc_cleanup_region_start (do_lock, flush_cleanup, NULL);
+-  if (do_lock)
+-    _IO_lock_lock (list_all_lock);
++  _IO_cleanup_region_start_noarg (flush_cleanup);
++  _IO_lock_lock (list_all_lock);
+ #endif
+ 
+-  last_stamp = _IO_list_all_stamp;
+-  fp = (_IO_FILE *) _IO_list_all;
+-  while (fp != NULL)
++  for (fp = (_IO_FILE *) _IO_list_all; fp != NULL; fp = fp->_chain)
+     {
+       run_fp = fp;
+-      if (do_lock)
+-	_IO_flockfile (fp);
++      _IO_flockfile (fp);
+ 
+       if (((fp->_mode <= 0 && fp->_IO_write_ptr > fp->_IO_write_base)
+ #if defined _LIBC || defined _GLIBCPP_USE_WCHAR_T
+@@ -848,52 +834,30 @@ _IO_flush_all_lockp (int do_lock)
+ 	  && _IO_OVERFLOW (fp, EOF) == EOF)
+ 	result = EOF;
+ 
+-      if (do_lock)
+-	_IO_funlockfile (fp);
++      _IO_funlockfile (fp);
+       run_fp = NULL;
+-
+-      if (last_stamp != _IO_list_all_stamp)
+-	{
+-	  /* Something was added to the list.  Start all over again.  */
+-	  fp = (_IO_FILE *) _IO_list_all;
+-	  last_stamp = _IO_list_all_stamp;
+-	}
+-      else
+-	fp = fp->_chain;
+     }
+ 
+ #ifdef _IO_MTSAFE_IO
+-  if (do_lock)
+-    _IO_lock_unlock (list_all_lock);
+-  __libc_cleanup_region_end (0);
++  _IO_lock_unlock (list_all_lock);
++  _IO_cleanup_region_end (0);
+ #endif
+ 
+   return result;
+ }
+-
+-
+-int
+-_IO_flush_all (void)
+-{
+-  /* We want locking.  */
+-  return _IO_flush_all_lockp (1);
+-}
+ libc_hidden_def (_IO_flush_all)
+ 
+ void
+ _IO_flush_all_linebuffered (void)
+ {
+   struct _IO_FILE *fp;
+-  int last_stamp;
+ 
+ #ifdef _IO_MTSAFE_IO
+   _IO_cleanup_region_start_noarg (flush_cleanup);
+   _IO_lock_lock (list_all_lock);
+ #endif
+ 
+-  last_stamp = _IO_list_all_stamp;
+-  fp = (_IO_FILE *) _IO_list_all;
+-  while (fp != NULL)
++  for (fp = (_IO_FILE *) _IO_list_all; fp != NULL; fp = fp->_chain)
+     {
+       run_fp = fp;
+       _IO_flockfile (fp);
+@@ -903,15 +867,6 @@ _IO_flush_all_linebuffered (void)
+ 
+       _IO_funlockfile (fp);
+       run_fp = NULL;
+-
+-      if (last_stamp != _IO_list_all_stamp)
+-	{
+-	  /* Something was added to the list.  Start all over again.  */
+-	  fp = (_IO_FILE *) _IO_list_all;
+-	  last_stamp = _IO_list_all_stamp;
+-	}
+-      else
+-	fp = fp->_chain;
+     }
+ 
+ #ifdef _IO_MTSAFE_IO
+@@ -947,6 +902,12 @@ static void
+ _IO_unbuffer_write (void)
+ {
+   struct _IO_FILE *fp;
++
++#ifdef _IO_MTSAFE_IO
++  _IO_cleanup_region_start_noarg (flush_cleanup);
++  _IO_lock_lock (list_all_lock);
++#endif
++
+   for (fp = (_IO_FILE *) _IO_list_all; fp; fp = fp->_chain)
+     {
+       if (! (fp->_flags & _IO_UNBUFFERED)
+@@ -956,15 +917,8 @@ _IO_unbuffer_write (void)
+ 	  && fp->_mode != 0)
+ 	{
+ #ifdef _IO_MTSAFE_IO
+-	  int cnt;
+-#define MAXTRIES 2
+-	  for (cnt = 0; cnt < MAXTRIES; ++cnt)
+-	    if (fp->_lock == NULL || _IO_lock_trylock (*fp->_lock) == 0)
+-	      break;
+-	    else
+-	      /* Give the other thread time to finish up its use of the
+-		 stream.  */
+-	      __sched_yield ();
++	  run_fp = fp;
++	  _IO_flockfile (fp);
+ #endif
+ 
+ 	  if (! dealloc_buffers && !(fp->_flags & _IO_USER_BUF))
+@@ -980,8 +934,8 @@ _IO_unbuffer_write (void)
+ 	  _IO_SETBUF (fp, NULL, 0);
+ 
+ #ifdef _IO_MTSAFE_IO
+-	  if (cnt < MAXTRIES && fp->_lock != NULL)
+-	    _IO_lock_unlock (*fp->_lock);
++	  _IO_funlockfile (fp);
++	  run_fp = NULL;
+ #endif
+ 	}
+ 
+@@ -989,6 +943,11 @@ _IO_unbuffer_write (void)
+ 	 used.  */
+       fp->_mode = -1;
+     }
++
++#ifdef _IO_MTSAFE_IO
++  _IO_lock_unlock (list_all_lock);
++  _IO_cleanup_region_end (0);
++#endif
+ }
+ 
+ 
+@@ -1008,9 +967,7 @@ libc_freeres_fn (buffer_free)
+ int
+ _IO_cleanup (void)
+ {
+-  /* We do *not* want locking.  Some threads might use streams but
+-     that is their problem, we flush them underneath them.  */
+-  int result = _IO_flush_all_lockp (0);
++  int result = _IO_flush_all ();
+ 
+   /* We currently don't have a reliable mechanism for making sure that
+      C++ static destructors are executed in the correct order.
+diff --git a/libio/libioP.h b/libio/libioP.h
+index 8a7b85b..3e3a724 100644
+--- a/libio/libioP.h
++++ b/libio/libioP.h
+@@ -488,7 +488,6 @@ extern int _IO_new_do_write (_IO_FILE *, const char *, _IO_size_t);
+ extern int _IO_old_do_write (_IO_FILE *, const char *, _IO_size_t);
+ extern int _IO_wdo_write (_IO_FILE *, const wchar_t *, _IO_size_t);
+ libc_hidden_proto (_IO_wdo_write)
+-extern int _IO_flush_all_lockp (int);
+ extern int _IO_flush_all (void);
+ libc_hidden_proto (_IO_flush_all)
+ extern int _IO_cleanup (void);
+-- 
+1.9.1
+
