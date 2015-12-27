@@ -1,6 +1,6 @@
 diff -uprN procd-2015-10-29/initd/zram.c procd-2015-10-29.new/initd/zram.c
 --- procd-2015-10-29/initd/zram.c	2015-12-17 14:45:14.244139511 +0300
-+++ procd-2015-10-29.new/initd/zram.c	2015-12-26 22:17:28.479917244 +0300
++++ procd-2015-10-29.new/initd/zram.c	2015-12-27 11:43:27.211107217 +0300
 @@ -82,7 +82,9 @@ early_insmod(char *module)
  int
  mount_zram_on_tmp(void)
@@ -12,22 +12,7 @@ diff -uprN procd-2015-10-29/initd/zram.c procd-2015-10-29.new/initd/zram.c
  	FILE *fp;
  	long zramsize;
  	pid_t pid;
-@@ -95,6 +97,14 @@ mount_zram_on_tmp(void)
- 
- 	mkdev("*", 0600);
- 
-+	fp = fopen("/sys/block/zram0/comp_algorithm", "r+");
-+	if (fp == NULL) {
-+		ERROR("Can't open /sys/block/zram0/comp_algorithm: %s\n", strerror(errno));
-+		return errno;
-+	}
-+	fprintf(fp, "lz4");
-+	fclose(fp);
-+
- 	zramsize = proc_meminfo() / 2;
- 	fp = fopen("/sys/block/zram0/disksize", "r+");
- 	if (fp == NULL) {
-@@ -116,7 +126,7 @@ mount_zram_on_tmp(void)
+@@ -116,7 +118,7 @@ mount_zram_on_tmp(void)
  		waitpid(pid, NULL, 0);
  	}
  
