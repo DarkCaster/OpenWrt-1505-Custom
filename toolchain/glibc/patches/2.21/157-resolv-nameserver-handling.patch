@@ -346,8 +346,8 @@ index c35fb66..5e53cc2 100644
  
 @@ -660,6 +623,21 @@ libresolv_hidden_def (res_nsend)
  
- /* Private */
- 
+    If no errors are encountered then *TERRNO is left unmodified and
+    a the length of the first response in bytes is returned.  */
 +static struct sockaddr *
 +get_nsaddr (res_state statp, int n)
 +{
@@ -367,9 +367,9 @@ index c35fb66..5e53cc2 100644
  send_vc(res_state statp,
  	const u_char *buf, int buflen, const u_char *buf2, int buflen2,
 @@ -674,7 +652,7 @@ send_vc(res_state statp,
- 	// XXX REMOVE
- 	// int anssiz = *anssizp;
- 	HEADER *anhp = (HEADER *) ans;
+ 	const HEADER *hp = (HEADER *) buf;
+ 	const HEADER *hp2 = (HEADER *) buf2;
+ 	HEADER *anhp = (HEADER *) *ansp;
 -	struct sockaddr_in6 *nsap = EXT(statp).nsaddrs[ns];
 +	struct sockaddr *nsap = get_nsaddr (statp, ns);
  	int truncating, connreset, n;
