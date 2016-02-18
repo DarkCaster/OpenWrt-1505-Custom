@@ -1,0 +1,57 @@
+From 2e9aeffd01b5e37f8248b8cdab8bb464179bb52e Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Wed, 10 Dec 2014 11:28:51 +0100
+Subject: [PATCH] Don't define __CORRECT_ISO_CPP_STRING_H_PROTO for non-GCC
+ compilers
+
+The implementation of __CORRECT_ISO_CPP_STRING_H_PROTO requires
+support for asm aliases.
+
+	[BZ #17631]
+	* string/string.h (__CORRECT_ISO_CPP_STRING_H_PROTO): Don't define
+	for non-GCC compilers.
+	* string/strings.h (__CORRECT_ISO_CPP_STRINGS_H_PROTO):
+	Likewise.
+---
+ string/string.h  | 8 ++------
+ string/strings.h | 8 ++------
+ 2 files changed, 4 insertions(+), 12 deletions(-)
+
+Index: glibc-2.19/string/string.h
+===================================================================
+--- glibc-2.19.orig/string/string.h
++++ glibc-2.19/string/string.h
+@@ -31,12 +31,8 @@ __BEGIN_DECLS
+ #define	__need_NULL
+ #include <stddef.h>
+ 
+-/* Provide correct C++ prototypes, and indicate this to the caller.  This
+-   requires a compatible C++ standard library.  As a heuristic, we provide
+-   these when the compiler indicates full conformance with C++98 or later,
+-   and for older GCC versions that are known to provide a compatible
+-   libstdc++.  */
+-#if defined __cplusplus && (__cplusplus >= 199711L || __GNUC_PREREQ (4, 4))
++/* Tell the caller that we provide correct C++ prototypes.  */
++#if defined __cplusplus && __GNUC_PREREQ (4, 4)
+ # define __CORRECT_ISO_CPP_STRING_H_PROTO
+ #endif
+ 
+Index: glibc-2.19/string/strings.h
+===================================================================
+--- glibc-2.19.orig/string/strings.h
++++ glibc-2.19/string/strings.h
+@@ -27,12 +27,8 @@
+ # define __need_size_t
+ # include <stddef.h>
+ 
+-/* Provide correct C++ prototypes, and indicate this to the caller.  This
+-   requires a compatible C++ standard library.  As a heuristic, we provide
+-   these when the compiler indicates full conformance with C++98 or later,
+-   and for older GCC versions that are known to provide a compatible
+-   libstdc++.  */
+-# if defined __cplusplus && (__cplusplus >= 199711L || __GNUC_PREREQ (4, 4))
++/* Tell the caller that we provide correct C++ prototypes.  */
++# if defined __cplusplus && __GNUC_PREREQ (4, 4)
+ #  define __CORRECT_ISO_CPP_STRINGS_H_PROTO
+ # endif
+ 

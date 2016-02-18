@@ -1,19 +1,17 @@
+2015-05-11  Andreas Schwab  <schwab@suse.de>
+
 	[BZ #18007]
-	* nis/nss_compat/compat-grp.c (internal_endgrent): Add parameter
-	needent, call nss_endgrent only if non-zero.
-	(_nss_compat_endgrent): Pass non-zero.
-	(_nss_compat_getgrnam_r, _nss_compat_getgrgid_r): Pass zero.
-	* nis/nss_compat/compat-pwd.c (internal_endpwent): Add parameter
-	needent, call nss_endpwent only if non-zero.
-	(_nss_compat_endpwent): Pass non-zero.
-	(_nss_compat_getpwnam_r, _nss_compat_getpwuid_r): Pass zero.
+	* nis/nss_compat/compat-grp.c (internal_endgrent): Don't call
+	nss_endgrent.
+	(_nss_compat_endgrent): Call nss_endgrent.
+	* nis/nss_compat/compat-pwd.c (internal_endpwent): Don't call
+	nss_endpwent.
+	(_nss_compat_endpwent): Call nss_endpwent.
 	* nis/nss_compat/compat-spwd.c (internal_setspent): Add parameter
 	needent, call nss_setspent only if non-zero.
-	(_nss_compat_setspent): Pass non-zero.
-	(internal_endspent): Add parameter needent, call nss_endspent only
-	if non-zero.
-	(_nss_compat_endspent, _nss_compat_getspent_r): Pass non-zero.
-	(_nss_compat_getspnam_r): Pass zero.
+	(_nss_compat_setspent, _nss_compat_getspent_r): Pass non-zero.
+	(internal_endspent): Don't call nss_endspent.
+	(_nss_compat_endspent): Call nss_endspent.
 	* nss/nss_files/files-XXX.c (position, last_use, keep_stream):
 	Remove.  All uses removed.
 	(internal_setent): Remove parameter stayopen, add parameter
@@ -38,96 +36,58 @@
 	internal_setent, internal_getent and internal_endent.  Remove
 	locking.
 
-Index: glibc-2.21/nis/nss_compat/compat-grp.c
+Index: glibc-2.19/nis/nss_compat/compat-grp.c
 ===================================================================
---- glibc-2.21.orig/nis/nss_compat/compat-grp.c
-+++ glibc-2.21/nis/nss_compat/compat-grp.c
-@@ -192,9 +192,9 @@ _nss_compat_setgrent (int stayopen)
- 
- 
+--- glibc-2.19.orig/nis/nss_compat/compat-grp.c
++++ glibc-2.19/nis/nss_compat/compat-grp.c
+@@ -194,9 +194,6 @@ _nss_compat_setgrent (int stayopen)
  static enum nss_status
--internal_endgrent (ent_t *ent)
-+internal_endgrent (ent_t *ent, int needent)
+ internal_endgrent (ent_t *ent)
  {
 -  if (nss_endgrent)
-+  if (needent && nss_endgrent)
-     nss_endgrent ();
- 
+-    nss_endgrent ();
+-
    if (ent->stream != NULL)
-@@ -222,7 +222,7 @@ _nss_compat_endgrent (void)
+     {
+       fclose (ent->stream);
+@@ -222,6 +219,9 @@ _nss_compat_endgrent (void)
  
    __libc_lock_lock (lock);
  
--  result = internal_endgrent (&ext_ent);
-+  result = internal_endgrent (&ext_ent, 1);
++  if (nss_endgrent)
++    nss_endgrent ();
++
+   result = internal_endgrent (&ext_ent);
  
    __libc_lock_unlock (lock);
- 
-@@ -532,7 +532,7 @@ _nss_compat_getgrnam_r (const char *name
-   if (result == NSS_STATUS_SUCCESS)
-     result = internal_getgrnam_r (name, grp, &ent, buffer, buflen, errnop);
- 
--  internal_endgrent (&ent);
-+  internal_endgrent (&ent, 0);
- 
-   return result;
- }
-@@ -661,7 +661,7 @@ _nss_compat_getgrgid_r (gid_t gid, struc
-   if (result == NSS_STATUS_SUCCESS)
-     result = internal_getgrgid_r (gid, grp, &ent, buffer, buflen, errnop);
- 
--  internal_endgrent (&ent);
-+  internal_endgrent (&ent, 0);
- 
-   return result;
- }
-Index: glibc-2.21/nis/nss_compat/compat-pwd.c
+Index: glibc-2.19/nis/nss_compat/compat-pwd.c
 ===================================================================
---- glibc-2.21.orig/nis/nss_compat/compat-pwd.c
-+++ glibc-2.21/nis/nss_compat/compat-pwd.c
-@@ -309,9 +309,9 @@ _nss_compat_setpwent (int stayopen)
- 
- 
+--- glibc-2.19.orig/nis/nss_compat/compat-pwd.c
++++ glibc-2.19/nis/nss_compat/compat-pwd.c
+@@ -311,9 +311,6 @@ _nss_compat_setpwent (int stayopen)
  static enum nss_status
--internal_endpwent (ent_t *ent)
-+internal_endpwent (ent_t *ent, int needent)
+ internal_endpwent (ent_t *ent)
  {
 -  if (nss_endpwent)
-+  if (needent && nss_endpwent)
-     nss_endpwent ();
- 
+-    nss_endpwent ();
+-
    if (ent->stream != NULL)
-@@ -346,7 +346,7 @@ _nss_compat_endpwent (void)
+     {
+       fclose (ent->stream);
+@@ -346,6 +343,9 @@ _nss_compat_endpwent (void)
  
    __libc_lock_lock (lock);
  
--  result = internal_endpwent (&ext_ent);
-+  result = internal_endpwent (&ext_ent, 1);
++  if (nss_endpwent)
++    nss_endpwent ();
++
+   result = internal_endpwent (&ext_ent);
  
    __libc_lock_unlock (lock);
- 
-@@ -871,7 +871,7 @@ _nss_compat_getpwnam_r (const char *name
-   if (result == NSS_STATUS_SUCCESS)
-     result = internal_getpwnam_r (name, pwd, &ent, buffer, buflen, errnop);
- 
--  internal_endpwent (&ent);
-+  internal_endpwent (&ent, 0);
- 
-   return result;
- }
-@@ -1110,7 +1110,7 @@ _nss_compat_getpwuid_r (uid_t uid, struc
-   if (result == NSS_STATUS_SUCCESS)
-     result = internal_getpwuid_r (uid, pwd, &ent, buffer, buflen, errnop);
- 
--  internal_endpwent (&ent);
-+  internal_endpwent (&ent, 0);
- 
-   return result;
- }
-Index: glibc-2.21/nis/nss_compat/compat-spwd.c
+Index: glibc-2.19/nis/nss_compat/compat-spwd.c
 ===================================================================
---- glibc-2.21.orig/nis/nss_compat/compat-spwd.c
-+++ glibc-2.21/nis/nss_compat/compat-spwd.c
+--- glibc-2.19.orig/nis/nss_compat/compat-spwd.c
++++ glibc-2.19/nis/nss_compat/compat-spwd.c
 @@ -169,7 +169,7 @@ copy_spwd_changes (struct spwd *dest, st
  }
  
@@ -155,27 +115,26 @@ Index: glibc-2.21/nis/nss_compat/compat-spwd.c
  
    __libc_lock_unlock (lock);
  
-@@ -265,9 +265,9 @@ _nss_compat_setspent (int stayopen)
- 
- 
+@@ -267,9 +267,6 @@ _nss_compat_setspent (int stayopen)
  static enum nss_status
--internal_endspent (ent_t *ent)
-+internal_endspent (ent_t *ent, int needent)
+ internal_endspent (ent_t *ent)
  {
 -  if (nss_endspent)
-+  if (needent && nss_endspent)
-     nss_endspent ();
- 
+-    nss_endspent ();
+-
    if (ent->stream != NULL)
-@@ -303,7 +303,7 @@ _nss_compat_endspent (void)
+     {
+       fclose (ent->stream);
+@@ -303,6 +300,9 @@ _nss_compat_endspent (void)
  
    __libc_lock_lock (lock);
  
--  result = internal_endspent (&ext_ent);
-+  result = internal_endspent (&ext_ent, 1);
++  if (nss_endspent)
++    nss_endspent ();
++
+   result = internal_endspent (&ext_ent);
  
    __libc_lock_unlock (lock);
- 
 @@ -658,7 +658,7 @@ _nss_compat_getspent_r (struct spwd *pwd
      init_nss_interface ();
  
@@ -185,7 +144,7 @@ Index: glibc-2.21/nis/nss_compat/compat-spwd.c
  
    if (result == NSS_STATUS_SUCCESS)
      result = internal_getspent_r (pwd, &ext_ent, buffer, buflen, errnop);
-@@ -830,12 +830,12 @@ _nss_compat_getspnam_r (const char *name
+@@ -830,7 +830,7 @@ _nss_compat_getspnam_r (const char *name
  
    __libc_lock_unlock (lock);
  
@@ -194,18 +153,18 @@ Index: glibc-2.21/nis/nss_compat/compat-spwd.c
  
    if (result == NSS_STATUS_SUCCESS)
      result = internal_getspnam_r (name, pwd, &ent, buffer, buflen, errnop);
- 
--  internal_endspent (&ent);
-+  internal_endspent (&ent, 0);
- 
-   return result;
- }
-Index: glibc-2.21/nss/nss_files/files-XXX.c
+Index: glibc-2.19/nss/nss_files/files-XXX.c
 ===================================================================
---- glibc-2.21.orig/nss/nss_files/files-XXX.c
-+++ glibc-2.21/nss/nss_files/files-XXX.c
-@@ -63,21 +63,18 @@ __libc_lock_define_initialized (static,
- /* Maintenance of the shared stream open on the database file.  */
+--- glibc-2.19.orig/nss/nss_files/files-XXX.c
++++ glibc-2.19/nss/nss_files/files-XXX.c
+@@ -60,24 +60,23 @@
+ /* Locks the static variables in this file.  */
+ __libc_lock_define_initialized (static, lock)
+ 
+-/* Maintenance of the shared stream open on the database file.  */
++/* Maintenance of the stream open on the database file.  For getXXent
++   operations the stream needs to be held open across calls, the other
++   getXXbyYY operations all use their own stream.  */
  
  static FILE *stream;
 -static fpos_t position;
@@ -230,7 +189,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  	status = errno == EAGAIN ? NSS_STATUS_TRYAGAIN : NSS_STATUS_UNAVAIL;
        else
  	{
-@@ -90,7 +87,7 @@ internal_setent (int stayopen)
+@@ -90,7 +89,7 @@ internal_setent (int stayopen)
  	      int result;
  	      int flags;
  
@@ -239,7 +198,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  	      if (result >= 0)
  		{
  # ifdef O_CLOEXEC
-@@ -100,15 +97,15 @@ internal_setent (int stayopen)
+@@ -100,15 +99,15 @@ internal_setent (int stayopen)
  # endif
  		    {
  		      flags |= FD_CLOEXEC;
@@ -258,7 +217,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  		  status = NSS_STATUS_UNAVAIL;
  		}
  	    }
-@@ -116,11 +113,7 @@ internal_setent (int stayopen)
+@@ -116,11 +115,7 @@ internal_setent (int stayopen)
  	}
      }
    else
@@ -271,7 +230,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  
    return status;
  }
-@@ -134,16 +127,7 @@ CONCAT(_nss_files_set,ENTNAME) (int stay
+@@ -134,16 +129,7 @@ CONCAT(_nss_files_set,ENTNAME) (int stay
  
    __libc_lock_lock (lock);
  
@@ -289,7 +248,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  
    __libc_lock_unlock (lock);
  
-@@ -153,12 +137,12 @@ CONCAT(_nss_files_set,ENTNAME) (int stay
+@@ -153,12 +139,12 @@ CONCAT(_nss_files_set,ENTNAME) (int stay
  
  /* Close the database file.  */
  static void
@@ -306,7 +265,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
      }
  }
  
-@@ -169,10 +153,7 @@ CONCAT(_nss_files_end,ENTNAME) (void)
+@@ -169,10 +155,7 @@ CONCAT(_nss_files_end,ENTNAME) (void)
  {
    __libc_lock_lock (lock);
  
@@ -318,7 +277,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  
    __libc_lock_unlock (lock);
  
-@@ -227,7 +208,7 @@ get_contents (char *linebuf, size_t len,
+@@ -227,7 +210,7 @@ get_contents (char *linebuf, size_t len,
  
  /* Parsing the database file into `struct STRUCTURE' data structures.  */
  static enum nss_status
@@ -327,7 +286,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  		 char *buffer, size_t buflen, int *errnop H_ERRNO_PROTO
  		 EXTRA_ARGS_DECL)
  {
-@@ -300,45 +281,14 @@ CONCAT(_nss_files_get,ENTNAME_r) (struct
+@@ -300,45 +283,14 @@ CONCAT(_nss_files_get,ENTNAME_r) (struct
      {
        int save_errno = errno;
  
@@ -376,7 +335,7 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
  
    __libc_lock_unlock (lock);
  
-@@ -364,27 +314,20 @@ _nss_files_get##name##_r (proto,
+@@ -364,27 +316,20 @@ _nss_files_get##name##_r (proto,
  			  size_t buflen, int *errnop H_ERRNO_PROTO)	      \
  {									      \
    enum nss_status status;						      \
@@ -409,12 +368,18 @@ Index: glibc-2.21/nss/nss_files/files-XXX.c
 -									      \
    return status;							      \
  }
-Index: glibc-2.21/nss/nss_files/files-alias.c
+Index: glibc-2.19/nss/nss_files/files-alias.c
 ===================================================================
---- glibc-2.21.orig/nss/nss_files/files-alias.c
-+++ glibc-2.21/nss/nss_files/files-alias.c
-@@ -36,20 +36,18 @@ __libc_lock_define_initialized (static,
- /* Maintenance of the shared stream open on the database file.  */
+--- glibc-2.19.orig/nss/nss_files/files-alias.c
++++ glibc-2.19/nss/nss_files/files-alias.c
+@@ -33,23 +33,23 @@
+ /* Locks the static variables in this file.  */
+ __libc_lock_define_initialized (static, lock)
+ 
+-/* Maintenance of the shared stream open on the database file.  */
++/* Maintenance of the stream open on the database file.  For getXXent
++   operations the stream needs to be held open across calls, the other
++   getXXbyYY operations all use their own stream.  */
  
  static FILE *stream;
 -static fpos_t position;
@@ -438,7 +403,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  	status = errno == EAGAIN ? NSS_STATUS_TRYAGAIN : NSS_STATUS_UNAVAIL;
        else
  	{
-@@ -62,7 +60,7 @@ internal_setent (void)
+@@ -62,7 +62,7 @@ internal_setent (void)
  	      int result;
  	      int flags;
  
@@ -447,7 +412,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  	      if (result >= 0)
  		{
  # ifdef O_CLOEXEC
-@@ -72,14 +70,14 @@ internal_setent (void)
+@@ -72,14 +72,14 @@ internal_setent (void)
  # endif
  		    {
  		      flags |= FD_CLOEXEC;
@@ -464,7 +429,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  		  stream = NULL;
  		  status = NSS_STATUS_UNAVAIL;
  		}
-@@ -88,7 +86,7 @@ internal_setent (void)
+@@ -88,7 +88,7 @@ internal_setent (void)
  	}
      }
    else
@@ -473,7 +438,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    return status;
  }
-@@ -102,16 +100,7 @@ _nss_files_setaliasent (void)
+@@ -102,16 +102,7 @@ _nss_files_setaliasent (void)
  
    __libc_lock_lock (lock);
  
@@ -491,7 +456,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    __libc_lock_unlock (lock);
  
-@@ -121,12 +110,12 @@ _nss_files_setaliasent (void)
+@@ -121,12 +112,12 @@ _nss_files_setaliasent (void)
  
  /* Close the database file.  */
  static void
@@ -508,7 +473,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
      }
  }
  
-@@ -137,7 +126,7 @@ _nss_files_endaliasent (void)
+@@ -137,7 +128,7 @@ _nss_files_endaliasent (void)
  {
    __libc_lock_lock (lock);
  
@@ -517,7 +482,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    __libc_lock_unlock (lock);
  
-@@ -146,7 +135,7 @@ _nss_files_endaliasent (void)
+@@ -146,7 +137,7 @@ _nss_files_endaliasent (void)
  
  /* Parsing the database file into `struct aliasent' data structures.  */
  static enum nss_status
@@ -526,7 +491,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  		char *buffer, size_t buflen, int *errnop)
  {
    enum nss_status status = NSS_STATUS_NOTFOUND;
-@@ -397,35 +386,16 @@ _nss_files_getaliasent_r (struct aliasen
+@@ -397,35 +388,16 @@ _nss_files_getaliasent_r (struct aliasen
  
    /* Be prepared that the set*ent function was not called before.  */
    if (stream == NULL)
@@ -568,7 +533,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
      }
  
    __libc_lock_unlock (lock);
-@@ -440,6 +410,7 @@ _nss_files_getaliasbyname_r (const char
+@@ -440,6 +412,7 @@ _nss_files_getaliasbyname_r (const char
  {
    /* Return next entry in host file.  */
    enum nss_status status = NSS_STATUS_SUCCESS;
@@ -576,7 +541,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    if (name == NULL)
      {
-@@ -447,11 +418,8 @@ _nss_files_getaliasbyname_r (const char
+@@ -447,11 +420,8 @@ _nss_files_getaliasbyname_r (const char
        return NSS_STATUS_UNAVAIL;
      }
  
@@ -590,7 +555,7 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    if (status == NSS_STATUS_SUCCESS)
      {
-@@ -459,13 +427,11 @@ _nss_files_getaliasbyname_r (const char
+@@ -459,13 +429,11 @@ _nss_files_getaliasbyname_r (const char
  
        /* Read lines until we get a definite result.  */
        do
@@ -606,10 +571,10 @@ Index: glibc-2.21/nss/nss_files/files-alias.c
  
    return status;
  }
-Index: glibc-2.21/nss/nss_files/files-hosts.c
+Index: glibc-2.19/nss/nss_files/files-hosts.c
 ===================================================================
---- glibc-2.21.orig/nss/nss_files/files-hosts.c
-+++ glibc-2.21/nss/nss_files/files-hosts.c
+--- glibc-2.19.orig/nss/nss_files/files-hosts.c
++++ glibc-2.19/nss/nss_files/files-hosts.c
 @@ -115,14 +115,13 @@ _nss_files_gethostbyname3_r (const char
  			     char *buffer, size_t buflen, int *errnop,
  			     int *herrnop, int32_t *ttlp, char **canonp)
