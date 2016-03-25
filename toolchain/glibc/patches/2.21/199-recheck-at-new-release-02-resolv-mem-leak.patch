@@ -1,3 +1,5 @@
+url: https://sourceware.org/ml/libc-alpha/2016-02/msg00157.html
+
 Fix resource leak in resolver (bug 19257)
 
 	* resolv/res_init.c (__res_iclose): Use statp->nscount instead of

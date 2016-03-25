@@ -1,3 +1,6 @@
+url: https://sourceware.org/bugzilla/show_bug.cgi?id=17250
+comment: regression, fixed in glibc 2.23
+
 2015-08-04  Maciej W. Rozycki  <macro@linux-mips.org>
 
 	[BZ #17250]
