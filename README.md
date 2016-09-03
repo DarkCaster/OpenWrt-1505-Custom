@@ -1,4 +1,4 @@
-# Customized OpenWrt based on official OpenWrt 15.05 Chaos Calmer release
+# Customized OpenWrt fork based on official OpenWrt 15.05 Chaos Calmer release
 
 Customizations and patches applied to vanilla source code:
 
