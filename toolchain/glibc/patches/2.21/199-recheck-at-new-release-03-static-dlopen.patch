@@ -1,0 +1,21 @@
+url: https://sourceware.org/bugzilla/show_bug.cgi?id=17250
+comment: regression, fixed in glibc 2.23
+
+2015-08-04  Maciej W. Rozycki  <macro@linux-mips.org>
+
+	[BZ #17250]
+	* elf/dl-support.c (_dl_main_map): Don't initialize l_flags_1
+	member.
+
+Index: glibc-2.19/elf/dl-support.c
+===================================================================
+--- glibc-2.19.orig/elf/dl-support.c
++++ glibc-2.19/elf/dl-support.c
+@@ -91,7 +91,6 @@ static struct link_map _dl_main_map =
+     .l_scope = _dl_main_map.l_scope_mem,
+     .l_local_scope = { &_dl_main_map.l_searchlist },
+     .l_used = 1,
+-    .l_flags_1 = DF_1_NODEFLIB,
+     .l_tls_offset = NO_TLS_OFFSET,
+     .l_serial = 1,
+   };
