@@ -1,9 +1,9 @@
 # OpenWrt fork based on official OpenWrt 15.05 Chaos Calmer release.
 
-See https://wiki.openwrt.org/toh/hwdata/netgear/netgear_wnr2200_v3 and https://wiki.openwrt.org/toh/netgear/wnr2200 for more info.
-
 This branch contains customizations needed for NETGEAR WNR2200 - Russian (and maybe Chinese) revisions.
 No other changes from "custom" branch is applied here.
+
+See https://wiki.openwrt.org/toh/hwdata/netgear/netgear_wnr2200_v3 and https://wiki.openwrt.org/toh/netgear/wnr2200 for more info.
 
 ## Fixes, applied to vanilla branch:
 
