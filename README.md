@@ -16,8 +16,7 @@ See https://wiki.openwrt.org/toh/hwdata/netgear/netgear_wnr2200_v3 and https://w
 It will completely overwrite and destroy wifi calibration data inside ART partition and prevent wifi module to start.
 If you want to compile image for 8 MiB router revision: compare this branch with vanilla and manually revert changes at target/linux/ar71xx/image/Makefile**
 
-
-
+***
 
 Customizations and patches applied to vanilla source code at "custom" branch:
 
