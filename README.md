@@ -1,6 +1,6 @@
 # Customized OpenWrt fork based on official OpenWrt 15.05 Chaos Calmer release
 
-__ See wnr2200ru branch is you are looking for changes to proper support Netgear WNR2200 routers (mainly for russian and china revisions). __
+_See wnr2200ru branch is you are looking for changes to proper support Netgear WNR2200 routers (mainly for russian and china revisions)._
 
 Customizations and patches applied to vanilla source code at "custom" branch:
 
