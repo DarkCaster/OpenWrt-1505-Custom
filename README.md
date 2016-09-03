@@ -5,7 +5,7 @@ also including all changes from "custom" branch.
 
 See https://wiki.openwrt.org/toh/hwdata/netgear/netgear_wnr2200_v3 and https://wiki.openwrt.org/toh/netgear/wnr2200 for more info.
 
-## Fixes related to WNR2200RU board support applied to "custom" branch:
+## Fixes for WNR2200RU board, applied on top of "custom" branch:
 
 * USB and GPIO fixes. Adopted from this unofficial firmware : http://openwrt.muessigb.net/Netgear_WNR2200/Chaos_Calmer_Builds/150504-b/ar71xx .
   Proper support for hardware buttons is still not complete (I have no time for this), but seems it's possible to make it work. Maybe i'll do this in the future.
