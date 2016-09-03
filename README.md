@@ -1,6 +1,8 @@
 # Customized OpenWrt fork based on official OpenWrt 15.05 Chaos Calmer release
 
-Customizations and patches applied to vanilla source code:
+__ See wnr2200ru branch is you are looking for changes to proper support Netgear WNR2200 routers (mainly for russian and china revisions). __
+
+Customizations and patches applied to vanilla source code at "custom" branch:
 
 ## Packages
 
@@ -14,7 +16,8 @@ Customizations and patches applied to vanilla source code:
 ## Glibc changes (for glibc builds)
 
 * glibc source revision is updated to newer version
-* Added various patches for secuirity fixes, minor performance improvements. Added some fixes from openSUSE distibution.
+* Added various patches for secuirity fixes, minor performance improvements.
+  Added some fixes from openSUSE GNU/Linux distribution.
 
 ## Kernel patches and config changes
 
