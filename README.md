@@ -13,8 +13,8 @@ See https://wiki.openwrt.org/toh/hwdata/netgear/netgear_wnr2200_v3 and https://w
 * MTD Flash Layout changes in image makefile to support full 16 MiB device size, and use proper location for ART partition.
 
 **Do not try to flash generated image to 8 MiB router version (US and EU revisions).
-It will completely overwrite and destroy wifi calibration data inside ART partotion and prevent wifi module to start
-If you want to compile image for 8 MiB router revision - compare this branch with vanilla - and manually revert changes at target/linux/ar71xx/image/Makefile**
+It will completely overwrite and destroy wifi calibration data inside ART partition and prevent wifi module to start.
+If you want to compile image for 8 MiB router revision: compare this branch with vanilla and manually revert changes at target/linux/ar71xx/image/Makefile**
 
 Customizations and patches applied to vanilla source code at "custom" branch:
 
