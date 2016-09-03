@@ -15,7 +15,7 @@ Customizations and patches applied to vanilla source code at "custom" branch:
 
 ## Glibc changes (for glibc builds)
 
-* glibc source revision is updated to newer version
+* glibc source is updated to newer revision from 2.21 tree.
 * Added various patches for secuirity fixes, minor performance improvements.
   Added some fixes from openSUSE GNU/Linux distribution.
 
