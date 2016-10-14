@@ -1,0 +1,100 @@
+From 59c0f6ff86c0801fbac82a585629793a3920cc83 Mon Sep 17 00:00:00 2001
+From: Yvan Roux <yvan.roux@linaro.org>
+Date: Fri, 15 Apr 2016 13:29:26 +0200
+Subject: [PATCH] Suppress GCC 6 warning about ambiguous 'else' with -Wparentheses
+
+Backport of df1cf48777fe4cd81ad7fb09ecbe5b31432b7c1c.
+
+	* stdlib/setenv.c (unsetenv): Fix ambiguous 'else'.
+	* nis/nis_call.c (nis_server_cache_add): Likewise.
+---
+ ChangeLog       |    5 +++++
+ nis/nis_call.c  |   20 +++++++++++---------
+ stdlib/setenv.c |   26 ++++++++++++++------------
+ 3 files changed, 30 insertions(+), 21 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index b36cd9e..666be70 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,8 @@
++2016-05-09  Yvan Roux  <yvan.roux@linaro.org>
++
++	* stdlib/setenv.c (unsetenv): Fix ambiguous 'else'.
++	* nis/nis_call.c (nis_server_cache_add): Likewise.
++
+ 2016-04-28  Stefan Liebler  <stli@linux.vnet.ibm.com>
+ 
+ 	[BZ #18508]
+diff --git a/nis/nis_call.c b/nis/nis_call.c
+index 970415b..d98c385 100644
+--- a/nis/nis_call.c
++++ b/nis/nis_call.c
+@@ -680,16 +680,18 @@ nis_server_cache_add (const_nis_name name, int search_parent,
+   /* Choose which entry should be evicted from the cache.  */
+   loc = &nis_server_cache[0];
+   if (*loc != NULL)
+-    for (i = 1; i < 16; ++i)
+-      if (nis_server_cache[i] == NULL)
+-	{
++    {
++      for (i = 1; i < 16; ++i)
++	if (nis_server_cache[i] == NULL)
++	  {
++	    loc = &nis_server_cache[i];
++	    break;
++	  }
++	else if ((*loc)->uses > nis_server_cache[i]->uses
++		 || ((*loc)->uses == nis_server_cache[i]->uses
++		     && (*loc)->expires > nis_server_cache[i]->expires))
+ 	  loc = &nis_server_cache[i];
+-	  break;
+-	}
+-      else if ((*loc)->uses > nis_server_cache[i]->uses
+-	       || ((*loc)->uses == nis_server_cache[i]->uses
+-		   && (*loc)->expires > nis_server_cache[i]->expires))
+-	loc = &nis_server_cache[i];
++    }
+   old = *loc;
+   *loc = new;
+ 
+diff --git a/stdlib/setenv.c b/stdlib/setenv.c
+index b60c4f0..84cec79 100644
+--- a/stdlib/setenv.c
++++ b/stdlib/setenv.c
+@@ -269,18 +269,20 @@ unsetenv (name)
+   ep = __environ;
+   if (ep != NULL)
+     while (*ep != NULL)
+-      if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
+-	{
+-	  /* Found it.  Remove this pointer by moving later ones back.  */
+-	  char **dp = ep;
+-
+-	  do
+-	    dp[0] = dp[1];
+-	  while (*dp++);
+-	  /* Continue the loop in case NAME appears again.  */
+-	}
+-      else
+-	++ep;
++      {
++	if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
++	  {
++	    /* Found it.  Remove this pointer by moving later ones back.  */
++	    char **dp = ep;
++
++	    do
++		dp[0] = dp[1];
++	    while (*dp++);
++	    /* Continue the loop in case NAME appears again.  */
++	  }
++	else
++	  ++ep;
++      }
+ 
+   UNLOCK;
+ 
+-- 
+1.7.1
+
